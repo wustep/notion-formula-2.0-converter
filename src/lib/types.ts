@@ -8,6 +8,10 @@ export const PROPERTY_TYPES = [
 	"other",
 ] as const
 
+export const PROPERTY_TYPES_STRING = PROPERTY_TYPES.filter(
+	type => type !== "other"
+).join(", ")
+
 export type PropertyType = (typeof PROPERTY_TYPES)[number]
 
 export type PropertyMapping = {

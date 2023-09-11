@@ -51,19 +51,26 @@ type FormulaChange = {
 	context?: string
 }
 
+type FormulaErrorIdentifier = keyof typeof FORMULA_ERRORS_LIST
+
+type FormulaError = {
+	errorIdentifier: FormulaErrorIdentifier
+	context?: string
+}
+
 export type ConversionResult = {
 	formula: string
 	changes: FormulaChange[]
 	// List of all the property names that were referenced in the formula
 	propsReferenced: Set<string>
-	errors: string[]
+	errors: FormulaError[]
 }
 
 // TODO: stricter typing here because this isn't typesafe object access
 export const FORMULA_CHANGES_LIST: {
 	[changeIdentifier: string]: {
 		description: string
-		example: string | ((context: string) => string)
+		example: (context: string) => string
 		replace?: (x: string) => string
 	}
 } = {
@@ -71,64 +78,76 @@ export const FORMULA_CHANGES_LIST: {
 	slice: {
 		description:
 			"slice() is now substring(). Note that slice() still exists, but it is now a list function.",
-		example: `slice("abc", 1, 2) -> substring("abc", 1, 2)`,
+		example: () => `slice("abc", 1, 2) → substring("abc", 1, 2)`,
 	},
 	start: {
 		description: "start() is now dateStart().",
-		example: `start(prop("Date")) -> dateStart(prop("Date"))`,
+		example: () => `start(prop("Date")) → dateStart(prop("Date"))`,
 	},
 	end: {
 		description: "end() is now dateEnd().",
-		example: `end(prop("Date")) -> dateEnd(prop("Date"))`,
+		example: () => `end(prop("Date")) → dateEnd(prop("Date"))`,
 	},
 	add: {
 		description:
 			"add() no longer supports text values. We convert them all usages of add to use '+' instead for safety.",
-		example: `add(1, 2) -> 1 + 2`,
+		example: () => `add(1, 2) → 1 + 2`,
 	},
 	// Properties
 	person: {
 		description:
 			"In 1.0, Person properties returned comma-separated text values. In 2.0, they are a list of Person objects. In the conversion, we re-map old prop references to the comma-separated text value to preserve outputs.",
 		example: (context: string) =>
-			`prop(${context}) -> join(${context}, map(format(current)), ", ")`,
+			`${context} → join(${context}, map(format(current)), ", ")`,
 	},
 	relation: {
 		description:
 			"In 1.0, Relation properties returned comma-separated text values. In 2.0, they are a list of Page objects. In the conversion, we re-map old prop references to the comma-separated text value to preserve outputs.",
 		example: (context: string) =>
-			`prop(${context}) -> join(${context}, map(format(current)), ", ")`,
+			`${context} → join("${context}", map(format(current)), ", ")`,
 	},
 	file: {
 		description:
 			"In 1.0, File properties returned comma-separated text values. In 2.0, they are a list of text. In the conversion, we re-map old prop references to the comma-separated text value to preserve outputs.",
-		example: (context: string) => `prop(${context}) -> join(${context}, ", ")`,
+		example: (context: string) => `${context} → join(${context}, ", ")`,
 	},
 	"multi-select": {
 		description:
 			"In 1.0, Multi-select properties returned comma-separated text values. In 2.0, they are a list of text. In the conversion, we re-map old prop references to the comma-separated text value to preserve outputs.",
-		example: (context: string) => `prop(${context}) -> join(${context}, ", ")`,
+		example: (context: string) => `${context} → join(${context}, ", ")`,
 	},
 	rollup: {
-		description:
-			"In 1.0, Rollup properties that are 'show values' or 'show values' returned comma-separated text values (without a space). In 2.0, they are a list of objects. In the conversion, we re-map old prop references to the comma-separated text value to preserve outputs.",
+		description: `In 1.0, Rollup properties that are "show values" or "show values" returned comma-separated text values (without a space). In 2.0, they are a list of objects. In the conversion, we re-map old prop references to the comma-separated text value to preserve outputs.`,
 		example: (context: string) =>
-			`prop(${context}) -> join(${context}, map(format(current)), ",")`,
+			`${context} → ${context}, map(format(current)), ",")`,
 	},
 	id: {
 		description:
 			'In 1.0, ID properties returned the ID number. In 2.0, they return a string with the prefix, e.g. "TASK-123". In the conversion, we re-map prop references to the ID number to preserve outputs.',
 		example: (context: string) =>
-			`prop(${context}) -> prop(${context}).split('-').last().toNumber()`,
+			`${context} → ${context}.split('-').last().toNumber()`,
 	},
 	// Constants
 	pi: {
 		description: "pi is now referred to with parentheses, like pi().",
-		example: `pi -> pi()`,
+		example: () => `pi → pi()`,
 	},
 	e: {
 		description: "e is now referred to with parentheses, like e().",
-		example: `e -> e()`,
+		example: () => `e → e()`,
+	},
+}
+
+export const FORMULA_ERRORS_LIST: {
+	[errorIdentifier: string]: {
+		text: (context: string) => string
+	}
+} = {
+	operatorNoArgs: {
+		text: (context: string) => `Operator ${context} with no arguments`,
+	},
+	parserError: {
+		text: (context: string) => `Parser error: ${context}`,
 	},
 }
 
@@ -151,7 +170,7 @@ export function convertFormula(
 function convertParsedFormula(
 	parsed: FormulaNode | undefined,
 	changes: FormulaChange[],
-	errors: string[],
+	errors: FormulaError[],
 	propsReferenced: Set<string>
 ): ConversionResult {
 	if (!parsed) {
@@ -185,7 +204,13 @@ function convertParsedFormula(
 			return {
 				formula: "",
 				changes,
-				errors: [...errors, parsed.message],
+				errors: [
+					...errors,
+					{
+						errorIdentifier: "parserError",
+						context: parsed.message,
+					},
+				],
 				propsReferenced,
 			}
 		default:
@@ -196,7 +221,7 @@ function convertParsedFormula(
 function convertParsedFunction(
 	parsed: FormulaFunctionNode,
 	changes: FormulaChange[],
-	errors: string[],
+	errors: FormulaError[],
 	propsReferenced: Set<string>
 ): ConversionResult {
 	const { args, name } = parsed
@@ -227,17 +252,18 @@ function convertParsedFunction(
 function convertParsedProperty(
 	parsed: FormulaPropertyNode,
 	changes: FormulaChange[],
-	errors: string[],
+	errors: FormulaError[],
 	propsReferenced: Set<string>
 ): ConversionResult {
 	const propertyType = parsed.propertyType
 	propsReferenced.add(parsed.name)
+	const context = `prop("${parsed.name}")`
 	switch (propertyType) {
 		case "person":
 		case "relation":
 			changes.push({
 				changeIdentifier: propertyType,
-				context: parsed.name,
+				context,
 			})
 			return {
 				formula: `join(prop("${parsed.name}"), map(format(current)), ", ")`,
@@ -248,7 +274,7 @@ function convertParsedProperty(
 		case "rollup":
 			changes.push({
 				changeIdentifier: propertyType,
-				context: parsed.name,
+				context,
 			})
 			return {
 				formula: `join(prop("${parsed.name}"), map(format(current)), ",")`,
@@ -260,7 +286,7 @@ function convertParsedProperty(
 		case "multi-select":
 			changes.push({
 				changeIdentifier: propertyType,
-				context: parsed.name,
+				context,
 			})
 			return {
 				formula: `join(prop("${parsed.name}"), ", ")`,
@@ -271,7 +297,7 @@ function convertParsedProperty(
 		case "id":
 			changes.push({
 				changeIdentifier: propertyType,
-				context: parsed.name,
+				context,
 			})
 			return {
 				formula: `prop("${parsed.name}").split('-').last().toNumber()`,
@@ -315,7 +341,7 @@ function convertParsedProperty(
 function convertParsedOperator(
 	parsed: FormulaOperatorNode,
 	changes: FormulaChange[],
-	errors: string[],
+	errors: FormulaError[],
 	propsReferenced: Set<string>
 ): ConversionResult {
 	const { args, operator } = parsed
@@ -349,7 +375,13 @@ function convertParsedOperator(
 	return {
 		formula: "",
 		changes,
-		errors: [...errors, "Operator with no arguments"],
+		errors: [
+			...errors,
+			{
+				errorIdentifier: "operatorNoArgs",
+				context: parsed.operator,
+			},
+		],
 		propsReferenced,
 	}
 }
@@ -357,7 +389,7 @@ function convertParsedOperator(
 function convertParsedConditional(
 	parsed: FormulaConditionalNode,
 	changes: FormulaChange[],
-	errors: string[],
+	errors: FormulaError[],
 	propsReferenced: Set<string>
 ): ConversionResult {
 	const { condition, ifTrue, ifFalse } = parsed
@@ -381,7 +413,7 @@ function convertParsedConditional(
 function convertParsedSymbol(
 	parsed: FormulaSymbolNode,
 	changes: FormulaChange[],
-	errors: string[],
+	errors: FormulaError[],
 	propsReferenced: Set<string>
 ): ConversionResult {
 	const { name } = parsed
