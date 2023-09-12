@@ -117,7 +117,7 @@ function App() {
 									{description}
 									<br />
 									{"Example: "}
-									<code>{example(change.context ?? "")}</code>
+									<code>{example?.(change.context ?? "")}</code>
 									<br />
 								</li>
 							)

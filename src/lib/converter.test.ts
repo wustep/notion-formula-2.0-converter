@@ -23,6 +23,16 @@ describe("converter", () => {
 			},
 		})
 	})
+
+	it('preserves \\n, \\t, \\" characters', () => {
+		const convertResult = convertFormula('"\\n\\t\\""', {})
+		expectConvertResult({
+			result: convertResult,
+			expects: {
+				formula: '"\\n\\t\\""',
+			},
+		})
+	})
 })
 
 function expectConvertResult({

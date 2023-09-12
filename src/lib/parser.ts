@@ -88,7 +88,14 @@ function nodeToFormula(
 	} else if (node.type === "ConstantNode") {
 		return {
 			type: "literal",
-			value: typeof node.value === "string" ? `"${node.value}"` : node.value,
+			value:
+				typeof node.value === "string"
+					? // Preserver \n, \" and \t for strings
+					  `"${node.value
+							.replace(/\n/g, "\\n")
+							.replace(/"/g, '\\"')
+							.replace(/\t/g, "\\t")}"`
+					: node.value,
 		}
 	} else if (node.type === "FunctionNode") {
 		const { fn, args } = node

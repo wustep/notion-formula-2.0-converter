@@ -14,35 +14,37 @@ import {
 } from "./types"
 import { unreachable } from "./utils"
 
-export const RENAMED_FORMULA_LIBRARY = {
+/** Simple 1:1 renames from old functions to new functions */
+const RENAMED_FORMULA_LIBRARY: {
+	[oldFunction: FormulaChangeIdentifier]: string
+} = {
 	slice: "substring",
 	start: "dateStart",
 	end: "dateEnd",
 }
 
-// export const REMOVED_FUNCTIONS = {
-// 	unaryMinus: "-",
-// 	unaryPlus: "+",
-// 	larger: ">",
-// 	largerEq: ">=",
-// 	smaller: "<",
-// 	smallerEq: "<=",
-// }
+/** 1:1 mappings of old functions to operators */
+const BINARY_FUNCTION_TO_OPERATOR: {
+	[oldFunction: FormulaChangeIdentifier]: string
+} = {
+	// add, subtract, multiply, divide, pow, mod all still exist in 2.0, so they're technically not necessary.
+	// Except for add -- we convert add() to + because add() no longer supports text values.
+	add: "+",
+	subtract: "-",
+	multiply: "*",
+	divide: "/",
+	pow: "^",
+	mod: "%",
+	equal: "==",
+	unequal: "!=",
+	larger: ">",
+	largerEq: ">=",
+	smaller: "<",
+	smallerEq: "<=",
+	concat: "+",
+}
 
-// const BINARY_FUNCTION_TO_OPERATOR = [
-// 	"add",
-// 	"subtract",
-// 	"multiply",
-// 	"divide",
-// 	"pow",
-// 	"mod",
-// 	"equal",
-// 	"unequal",
-// 	"larger",
-// 	"largerEq",
-// 	"smaller",
-// 	"smallerEq",
-// ]
+// Remaining mappings include: unaryMinus, unaryPlus, month, day, join, `+ X` (unary plus), and `not X` (!) which are done inline.
 
 type FormulaChangeIdentifier = keyof typeof FORMULA_CHANGES_LIST
 
@@ -61,7 +63,7 @@ type FormulaError = {
 export type ConversionResult = {
 	formula: string
 	changes: FormulaChange[]
-	// List of all the property names that were referenced in the formula
+	// Set of all the property names that were referenced in the formula
 	propsReferenced: Set<string>
 	errors: FormulaError[]
 }
@@ -74,7 +76,7 @@ export const FORMULA_CHANGES_LIST: {
 		replace?: (x: string) => string
 	}
 } = {
-	// Functions
+	// Renamed functions
 	slice: {
 		description:
 			"slice() is now substring(). Note that slice() still exists, but it is now a list function.",
@@ -88,10 +90,100 @@ export const FORMULA_CHANGES_LIST: {
 		description: "end() is now dateEnd().",
 		example: () => `end(prop("Date")) → dateEnd(prop("Date"))`,
 	},
+	// Removed functions
+	unaryMinus: {
+		description: "unaryMinus() is removed.",
+		example: () => `unaryMinus(1) → -1`,
+	},
+	unaryPlus: {
+		description: "unaryPlus() is removed. Use 'toNumber' instaed.",
+		example: () => `unaryPlus("1") → toNumber("1")`,
+	},
+	larger: {
+		description: "larger() is removed. Use '>' instead.",
+		example: () => `larger(1, 2) → 1 > 2`,
+	},
+	largerEq: {
+		description: "largerEq() is removed. Use '>=' instead.",
+		example: () => `largerEq(1, 2) → 1 >= 2`,
+	},
+	smaller: {
+		description: "smaller() is removed. Use '<' instead.",
+		example: () => `smaller(1, 2) → 1 < 2`,
+	},
+	smallerEq: {
+		description: "smallerEq() is removed. Use '<=' instead.",
+		example: () => `smallerEq(1, 2) → 1 <= 2`,
+	},
+	not: {
+		description: "not() is removed. Use '!' instead.",
+		example: () => `not(true) → !true`,
+	},
+	// Revised functions
 	add: {
 		description:
 			"add() no longer supports text values. We convert them all usages of add to use '+' instead for safety.",
 		example: () => `add(1, 2) → 1 + 2`,
+	},
+	month: {
+		description:
+			"month() is now 1-indexed instead of 0-indexed. We convert all existing usages of month to subtract 1.",
+		example: () => `month(x) → month(x) - 1`,
+	},
+	day: {
+		description:
+			"day() is now 1-indexed instead of 0-indexed. We convert all usages of day to be mod 7.",
+		example: () => `day(x) → day(x) % 7`,
+	},
+	join: {
+		description:
+			"join() is now a list function and doesn't work for regular string params. We convert all usages of join to use the new list format function.",
+		example: () => `join(",","a","b","c") → join(["a","b","c"], ",")`,
+	},
+	// Operators that are converted, but not necessarily needed to be converted.
+	subtract: {
+		description:
+			"subtract() is converted to `-`. This isn't quite necessary as the function is available in 2.0.",
+		example: () => `subtract(1, 2) → 1 - 2`,
+	},
+	multiply: {
+		description:
+			"multiply() is converted to `*`. This isn't quite necessary as the function is available in 2.0.",
+		example: () => `multiply(1, 2) → 1 * 2`,
+	},
+	divide: {
+		description:
+			"divide() is converted to `/`. This isn't quite necessary as the function is available in 2.0.",
+		example: () => `divide(1, 2) → 1 / 2`,
+	},
+	pow: {
+		description:
+			"pow() is converted to `^`. This isn't quite necessary as the function is available in 2.0.",
+		example: () => `pow(1, 2) → 1 ^ 2`,
+	},
+	mod: {
+		description:
+			"mod() is converted to `%`. This isn't quite necessary as the function is available in 2.0.",
+		example: () => `mod(1, 2) → 1 % 2`,
+	},
+	equal: {
+		description:
+			"equal() is converted to `==`. This isn't quite necessary as the function is available in 2.0.",
+		example: () => `equal(1, 2) → 1 == 2`,
+	},
+	unequal: {
+		description:
+			"unequal() is converted to `!=`. This isn't quite necessary as the function is available in 2.0.",
+		example: () => `unequal(1, 2) → 1 != 2`,
+	},
+	concat: {
+		description:
+			"concat() is now only used for lists, so existing usages were converted to `+`.",
+		example: () => `concat("a", "b") → "a" + "b"`,
+	},
+	"+": {
+		description: "+ as a unary operator is now removed. Use toNumber instead.",
+		example: () => `+"1" → toNumber("1")`,
 	},
 	// Properties
 	person: {
@@ -145,6 +237,10 @@ export const FORMULA_ERRORS_LIST: {
 } = {
 	operatorNoArgs: {
 		text: (context: string) => `Operator ${context} with no arguments`,
+	},
+	operatorIncorrectArgs: {
+		text: (context: string) =>
+			`Operator ${context} called with incorrect arguments`,
 	},
 	parserError: {
 		text: (context: string) => `Parser error: ${context}`,
@@ -226,23 +322,72 @@ function convertParsedFunction(
 ): ConversionResult {
 	const { args, name } = parsed
 	const changeIndex = changes.length
-	const convertedArgs = args
-		.map(
-			arg =>
-				convertParsedFormula(arg, changes, errors, propsReferenced).formula,
-			propsReferenced
-		)
-		.join(", ")
-	let newFunctionName = name
+	const convertedArgs = args.map(
+		arg => convertParsedFormula(arg, changes, errors, propsReferenced).formula,
+		propsReferenced
+	)
+	const convertedArgsWithComma = convertedArgs.join(", ")
+	let newFormula: string
 	if (name in RENAMED_FORMULA_LIBRARY) {
-		newFunctionName =
+		const newFunctionName =
 			RENAMED_FORMULA_LIBRARY[name as keyof typeof RENAMED_FORMULA_LIBRARY]
 		changes.splice(changeIndex, 0, {
 			changeIdentifier: name,
 		})
+		newFormula = `${newFunctionName}(${convertedArgsWithComma})`
+	} else if (name in BINARY_FUNCTION_TO_OPERATOR) {
+		const operatorReplacement =
+			BINARY_FUNCTION_TO_OPERATOR[
+				name as keyof typeof BINARY_FUNCTION_TO_OPERATOR
+			]
+		changes.splice(changeIndex, 0, {
+			changeIdentifier: name,
+		})
+		if (args.length !== 2) {
+			errors.push({
+				errorIdentifier: "operatorIncorrectArgs",
+				context: name,
+			})
+		}
+		newFormula = `${maybeWrapParentheses(
+			parsed.args[0],
+			convertedArgs[0]
+		)} ${operatorReplacement} ${maybeWrapParentheses(
+			parsed.args[1],
+			convertedArgs[1]
+		)}`
+	} else if (name === "unaryMinus") {
+		changes.splice(changeIndex, 0, {
+			changeIdentifier: name,
+		})
+		newFormula = `-${maybeWrapParentheses(parsed.args[0], convertedArgs[0])}`
+	} else if (name === "unaryPlus") {
+		changes.splice(changeIndex, 0, {
+			changeIdentifier: name,
+		})
+		newFormula = `toNumber(${convertedArgs[0]})`
+	} else if (name === "day") {
+		changes.splice(changeIndex, 0, {
+			changeIdentifier: name,
+		})
+		newFormula = `day(${convertedArgs[0]}) % 7`
+	} else if (name === "month") {
+		changes.splice(changeIndex, 0, {
+			changeIdentifier: name,
+		})
+		newFormula = `month(${convertedArgs[0]}) - 1`
+	} else if (name === "join") {
+		changes.splice(changeIndex, 0, {
+			changeIdentifier: name,
+		})
+		newFormula = `join([${convertedArgs.slice(1).join(", ")}], ${
+			convertedArgs[0]
+		})`
+	} else {
+		newFormula = `${name}(${convertedArgsWithComma})`
 	}
 	return {
-		formula: `${newFunctionName}(${convertedArgs})`,
+		formula: newFormula,
 		changes,
 		errors,
 		propsReferenced,
@@ -317,26 +462,25 @@ function convertParsedProperty(
 	}
 }
 
-// TODO: use this
-// function maybeWrapParentheses(
-// 	formulaNode: FormulaNode,
-// 	convertedFormula: string
-// ): string {
-// 	if (
-// 		formulaNode.type === "conditional" ||
-// 		(formulaNode.type === "function" &&
-// 			(BINARY_FUNCTION_TO_OPERATOR.includes(formulaNode.name) ||
-// 				["unaryPlus", "unaryMinus"].includes(formulaNode.name))) ||
-// 		(formulaNode.type === "operator" &&
-// 			formulaNode.args !== undefined &&
-// 			formulaNode.args.length >= 2)
-// 	) {
-// 		// If we're in this branch, we *may* need parentheses but let's just always
-// 		// add them so we don't have to think about operator precedence/associativity.
-// 		return "(" + convertedFormula + ")"
-// 	}
-// 	return convertedFormula
-// }
+function maybeWrapParentheses(
+	formulaNode: FormulaNode,
+	convertedFormula: string
+): string {
+	if (
+		formulaNode.type === "conditional" ||
+		(formulaNode.type === "function" &&
+			(Object.keys(BINARY_FUNCTION_TO_OPERATOR).includes(formulaNode.name) ||
+				["unaryPlus", "unaryMinus"].includes(formulaNode.name))) ||
+		(formulaNode.type === "operator" &&
+			formulaNode.args !== undefined &&
+			formulaNode.args.length >= 2)
+	) {
+		// If we're in this branch, we *may* need parentheses but let's just always
+		// add them so we don't have to think about operator precedence/associativity.
+		return "(" + convertedFormula + ")"
+	}
+	return convertedFormula
+}
 
 function convertParsedOperator(
 	parsed: FormulaOperatorNode,
@@ -347,7 +491,6 @@ function convertParsedOperator(
 	const { args, operator } = parsed
 	// TODO: const changeIndex = changes.length
 	if (args.length > 1) {
-		// TODO: Add binary operator changes?
 		const convertedArgs = args.map(
 			arg => convertParsedFormula(arg, changes, errors, propsReferenced).formula
 		)
@@ -358,15 +501,28 @@ function convertParsedOperator(
 			propsReferenced,
 		}
 	} else if (args.length === 1) {
-		// TODO: add unary operator changes?
 		const convertedArg = convertParsedFormula(
 			args[0],
 			changes,
 			errors,
 			propsReferenced
 		).formula
+		let newFormula
+		if (operator === "not") {
+			changes.push({
+				changeIdentifier: "not",
+			})
+			newFormula = `!${maybeWrapParentheses(args[0], convertedArg[0])})`
+		} else if (operator === "+") {
+			changes.push({
+				changeIdentifier: "unaryPlus",
+			})
+			newFormula = `toNumber(${convertedArg})`
+		} else {
+			newFormula = `${operator}${convertedArg}`
+		}
 		return {
-			formula: `${operator}${convertedArg}`,
+			formula: newFormula,
 			changes,
 			errors,
 			propsReferenced,
@@ -386,6 +542,11 @@ function convertParsedOperator(
 	}
 }
 
+/**
+ * Convert a conditional node to a formula 2.0 conversion result.
+ *
+ * Note that `X ? Y : Z` also counts as a conditional by the math.js parser.
+ */
 function convertParsedConditional(
 	parsed: FormulaConditionalNode,
 	changes: FormulaChange[],
@@ -393,17 +554,17 @@ function convertParsedConditional(
 	propsReferenced: Set<string>
 ): ConversionResult {
 	const { condition, ifTrue, ifFalse } = parsed
-	const changeIndex = changes.length
 	const convertedArgs = [condition, ifTrue, ifFalse].map(
 		arg => convertParsedFormula(arg, changes, errors, propsReferenced).formula
 	)
-	// TODO: Only add changes if it actually changed lol, maybe keep track of ?: vs if?
-	// TBH, don't really need to report error here.
-	changes.splice(changeIndex, 0, {
-		changeIdentifier: "conditional",
-	})
 	return {
-		formula: `if(${convertedArgs[0]}, ${convertedArgs[1]}, ${convertedArgs[2]})`,
+		formula: `if(${maybeWrapParentheses(
+			parsed.condition,
+			convertedArgs[0]
+		)}, ${maybeWrapParentheses(
+			parsed.ifTrue,
+			convertedArgs[1]
+		)}, ${maybeWrapParentheses(parsed.condition, convertedArgs[2])})`,
 		changes,
 		errors,
 		propsReferenced,
