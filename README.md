@@ -1,4 +1,5 @@
 # notion-formula-2.0-converter
+https://wustep.github.io/notion-formula-2.0-converter/
 
 <img width="1201" alt="2023-09-11 at 22 04 35@2x" src="https://github.com/wustep/notion-formula-2.0-converter/assets/6259534/4e024827-315e-4d62-9ded-ce284af4789d">
 
