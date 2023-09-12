@@ -9,6 +9,11 @@ However, you might still have formulas on older reference materials that aren't 
 
 This is NOT the same algorithm as the Notion converter, so results may be slightly different.
 
+## Usage
+- Install: `npm install`
+- Run dev: `npm run dev`
+- Build: `npm run build`
+
 ## Important conversion notes
 
 - We convert "add", "subtract", "multiply", "divide", "pow", "mod" to their operator equivalents to match the 2.0 converter, but technically this usage is actually valid in 2.0 anyways -- except in the case of using "add" for adding strings.
