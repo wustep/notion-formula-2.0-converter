@@ -7,7 +7,7 @@ On September 7, 2023, Notion released Formulas 2.0, which included a new editor 
 
 However, you might still have formulas on older reference materials that aren't migrated. This tool can be used to best effort convert Notion formulas from 1.0 to 2.0. 
 
-These converted formulas will likely be more verbose and less powerful than new formula 2.0s written using the new language and functions but are helpful for users using past formulas.
+These converted formulas will likely be more verbose and less powerful than new formula 2.0s written using the new language and functions! It's recommended that you [learn the 2.0 language](https://www.notion.so/help/formulas) and [rewrite formulas using the new functionality](https://www.notion.so/help/guides/new-formulas-whats-changed) if you have the chance :). 
 
 This is NOT necessarily the same algorithm as the Notion converter, so results may be slightly different. This isn't officially supported and is just a lil pet project!
 
