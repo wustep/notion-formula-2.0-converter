@@ -1,7 +1,7 @@
 import path from "path"
 
 export const outputConfig = {
-	destPath: "./dist",
+	destPath: "./docs",
 }
 
 // Entry points
