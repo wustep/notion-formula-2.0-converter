@@ -1,0 +1,45 @@
+html {
+	font-family: sans-serif;
+	background: rgb(251, 251, 250);
+}
+
+.table {
+	background: rgb(251, 251, 250);
+}
+
+.title:not(:last-child) {
+	margin-bottom: 1rem;
+}
+
+.textarea {
+	height: 200px !important;
+	resize: none !important;
+}
+
+.textarea[disabled] {
+	cursor: text;
+	background-color: white;
+	border-color: blue;
+}
+
+.copy-button {
+	float: right;
+	font-size: 0.8rem;
+}
+
+.property-type-cell {
+	vertical-align: middle !important;
+	font-weight: bold;
+}
+
+.arrow {
+	align-self: center;
+	justify-self: center;
+	flex-grow: 0;
+	margin: 5px;
+}
+
+.error {
+	color: red;
+}
+
