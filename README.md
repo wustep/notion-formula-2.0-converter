@@ -3,11 +3,13 @@
 <img width="1201" alt="2023-09-11 at 22 04 35@2x" src="https://github.com/wustep/notion-formula-2.0-converter/assets/6259534/4e024827-315e-4d62-9ded-ce284af4789d">
 
 ## About
-On September 7, 2023, Notion released Formulas 2.0, which included a new editor and new language syntax changes. With the new language syntax changes, all pre-existing formulas were migrated automatically to preserve the same outputs.
+On September 7, 2023, Notion released Formulas 2.0, which included a new editor and new language syntax changes. With the new language syntax changes, all pre-existing formulas were migrated automatically to preserve the same outputs. 
 
-However, you might still have formulas on older reference materials that aren't migrated. This tool can be used to best effort convert Notion formulas from 1.0 to 2.0.
+However, you might still have formulas on older reference materials that aren't migrated. This tool can be used to best effort convert Notion formulas from 1.0 to 2.0. 
 
-This is NOT the same algorithm as the Notion converter, so results may be slightly different.
+These converted formulas will likely be more verbose and less powerful than new formula 2.0s written using the new language and functions but are helpful for users using past formulas.
+
+This is NOT necessarily the same algorithm as the Notion converter, so results may be slightly different. This isn't officially supported and is just a lil pet project!
 
 ## Usage
 - Install: `npm install`
