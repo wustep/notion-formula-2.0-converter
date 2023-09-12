@@ -5,7 +5,6 @@ import CopyPlugin from "copy-webpack-plugin"
 import TerserPlugin from "terser-webpack-plugin"
 import {
 	outputConfig,
-	copyPluginPatterns,
 	entryConfig,
 	terserPluginConfig,
 } from "./env.config"
@@ -57,7 +56,6 @@ module.exports = (
 		},
 		plugins: [
 			new CleanWebpackPlugin(),
-			new CopyPlugin(copyPluginPatterns),
 			new HtmlWebpackPlugin({
 				template: "./src/index.html",
 				inject: true,
